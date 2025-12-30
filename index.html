@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <title>Fitness – Rafał Szeklicki</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card: rgba(10, 16, 28, .62);
+      --card2: rgba(10, 16, 28, .40);
+      --text:#e8eefc;
+      --muted:#a9b6d3;
+      --line: rgba(255,255,255,.12);
+      --accent:#4f8cff;
+      --accent2:#2bd4a3;
+      --danger:#ff4f6d;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+      overflow-x:hidden;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bg{
+      position:fixed; inset:0;
+      background:
+        linear-gradient(180deg, rgba(5,10,18,.72), rgba(5,10,18,.88)),
+        url("Kulturysta.jpg") center/cover no-repeat;
+      filter:saturate(1.05) contrast(1.05);
+      z-index:-2;
+    }
+    .grain{
+      position:fixed; inset:0;
+      background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity:.08;
+      z-index:-1;
+      pointer-events:none;
+    }
+    header{
+      padding: 18px 16px 10px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .topbar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 14px;
+      backdrop-filter: blur(10px);
+    }
+    .brand{ display:flex; flex-direction:column; gap:2px; min-width: 0; }
+    .brand h1{
+      margin:0; font-size:16px; letter-spacing:.2px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .brand .sub{ color:var(--muted); font-size:12px; }
+    .pill{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size:12px;
+    }
+    main{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 10px 16px 110px;
+    }
+    .card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media(min-width: 980px){ .grid-2{ grid-template-columns: 1fr 1fr; } }
+    .section-title{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; margin-bottom:10px;
+    }
+    .section-title h2{ margin:0; font-size:14px; letter-spacing:.2px; }
+    .section-title .hint{ color:var(--muted); font-size:12px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+    label{
+      display:flex; flex-direction:column; gap:6px;
+      font-size:12px; color: var(--muted);
+      flex:1; min-width: 140px;
+    }
+    input, select, textarea{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{ min-height: 84px; resize: vertical; }
+    input::placeholder, textarea::placeholder{ color: rgba(232,238,252,.55); }
+
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-weight: 700;
+      cursor:pointer;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+      transition: transform .05s ease, background .2s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: scale(.99); }
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(79,140,255,.95), rgba(79,140,255,.72));
+      border-color: rgba(79,140,255,.55);
+    }
+    .btn.good{
+      background: linear-gradient(180deg, rgba(43,212,163,.95), rgba(43,212,163,.72));
+      border-color: rgba(43,212,163,.55);
+      color:#062019;
+    }
+    .btn.danger{
+      background: linear-gradient(180deg, rgba(255,79,109,.95), rgba(255,79,109,.72));
+      border-color: rgba(255,79,109,.55);
+    }
+    .btn.small{
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .item{
+      background: var(--card2);
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .item-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .item-title{ display:flex; flex-direction:column; gap:4px; min-width: 0; }
+    .item-title b{ font-size: 13px; }
+    .item-title span{ font-size: 12px; color: var(--muted); }
+    .divider{ height:1px; background: rgba(255,255,255,.10); margin: 10px 0; }
+
+    /* DOLNE TABY */
+    .tabs{
+      position:fixed; left:0; right:0; bottom:0;
+      padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(5,10,18,0), rgba(5,10,18,.85) 35%, rgba(5,10,18,.95));
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+    .tabbar{
+      max-width:1100px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      background: rgba(10,16,28,.55);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      padding: 8px;
+      box-shadow: var(--shadow);
+    }
+    .tab{
+      border:1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 6px;
+      border-radius: 14px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+    }
+    .tab.active{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.12);
+      color: var(--text);
+    }
+    .tab .dot{ width: 26px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.16); }
+    .tab.active .dot{ background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 110px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+      backdrop-filter: blur(10px);
+      z-index: 20;
+    }
+    .toast.show{ opacity: 1; }
+    .muted{ color: var(--muted); font-size: 12px; }
+    .right{ display:flex; gap:8px; align-items:center; }
+    canvas{ width: 100%; height: 220px; display:block; background: rgba(255,255,255,.03); border-radius: 14px; border: 1px solid rgba(255,255,255,.08); }
+
+    .kpi{ display:flex; gap:10px; flex-wrap:wrap; }
+    .kpi .box{
+      flex:1; min-width: 160px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .kpi .box .v{ font-weight: 900; font-size: 18px; }
+    .kpi .box .t{ color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+    .inline{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .chip{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* TRYBY TRENINGU (1-5) */
+    .seg{
+      display:flex; gap:8px; flex-wrap:wrap;
+      padding: 10px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      border-radius: 16px;
+      margin-bottom: 12px;
+    }
+    .seg button{
+      flex:1;
+      min-width: 92px;
+      border-radius: 14px;
+      padding: 10px 10px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .seg button.active{
+      color: var(--text);
+      border-color: rgba(79,140,255,.55);
+      background: rgba(79,140,255,.18);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg"></div>
+  <div class="grain"></div>
+
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <h1>Rafał Szeklicki</h1>
+        <div class="sub">Offline • Fullscreen • Zapis lokalny</div>
+      </div>
+      <div class="right">
+        <div class="pill" id="offlinePill">📶 Status: sprawdzam…</div>
+        <button class="btn small" id="btnBackup">Eksport</button>
+        <button class="btn small" id="btnRestore">Import</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- WAGA -->
+    <section id="view-weight" class="view">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-title">
+            <h2>Waga – wpis tygodniowy</h2>
+            <span class="hint">Zapisuje się na telefonie</span>
+          </div>
+
+          <div class="row">
+            <label>Data ważenia <input type="date" id="weighDate" /></label>
+            <label>Waga (kg) <input type="number" step="0.1" inputmode="decimal" id="weighValue" placeholder="np. 92.4" /></label>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn good" id="btnAddWeight">➕ Dodaj wpis</button>
+            <button class="btn" id="btnClearWeightForm">Wyczyść</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="section-title">
+            <h2>Cel</h2>
+            <span class="hint">Waga docelowa + termin</span>
+          </div>
+
+          <div class="row">
+            <label>Waga docelowa (kg) <input type="number" step="0.1" inputmode="decimal" id="goalWeight" placeholder="np. 85.0" /></label>
+            <label>Data osiągnięcia <input type="date" id="goalDate" /></label>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn primary" id="btnSaveGoal">✅ Zapisz cel</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="kpi">
+            <div class="box"><div class="v" id="kpiLast">—</div><div class="t">Ostatnia waga</div></div>
+            <div class="box"><div class="v" id="kpiDiff">—</div><div class="t">Do celu</div></div>
+            <div class="box"><div class="v" id="kpiEta">—</div><div class="t">Cel: data</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Wykres – wahania (miesięcznie)</h2>
+            <span class="hint">Offline (canvas)</span>
+          </div>
+
+          <div class="inline" style="margin-bottom:10px;">
+            <span class="chip">Filtr dat</span>
+            <label style="min-width: 160px; flex:0 0 auto;">Od <input type="date" id="filterFrom" /></label>
+            <label style="min-width: 160px; flex:0 0 auto;">Do <input type="date" id="filterTo" /></label>
+            <button class="btn small" id="btnApplyFilter">Filtruj</button>
+            <button class="btn small" id="btnResetFilter">Reset</button>
+          </div>
+
+          <canvas id="weightChart"></canvas>
+
+          <div class="divider"></div>
+
+          <div class="section-title">
+            <h2>Historia wpisów</h2>
+            <span class="hint">Kliknij, żeby edytować</span>
+          </div>
+          <div class="list" id="weightList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRENING -->
+    <section id="view-training" class="view" style="display:none;">
+      <div class="card">
+        <div class="section-title">
+          <h2 id="trainingTitle">Trening</h2>
+          <span class="hint">Tryb 1–5 (osobne)</span>
+        </div>
+
+        <div class="seg" id="trainingSeg">
+          <button data-t="t1" class="active">Trening 1</button>
+          <button data-t="t2">Trening 2</button>
+          <button data-t="t3">Trening 3</button>
+          <button data-t="t4">Trening 4</button>
+          <button data-t="t5">Trening 5</button>
+        </div>
+
+        <div class="row">
+          <label style="flex:2; min-width: 220px;">
+            Nazwa ćwiczenia
+            <input type="text" id="exName" placeholder="np. Wyciskanie sztangi leżąc" />
+          </label>
+          <label style="flex:1; min-width: 160px;">
+            Liczba serii
+            <input type="number" min="1" step="1" inputmode="numeric" id="exSets" placeholder="np. 4" />
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="btn good" id="btnBuildSets">⚙️ Utwórz serie</button>
+          <button class="btn" id="btnClearExercise">Wyczyść</button>
+        </div>
+
+        <div id="setsEditor" style="margin-top:12px; display:none;">
+          <div class="divider"></div>
+          <div class="section-title">
+            <h2>Serie</h2>
+            <span class="hint">Powtórzenia i ciężar per seria</span>
+          </div>
+          <div class="list" id="setsList"></div>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn primary" id="btnSaveExercise">✅ Zapisz ćwiczenie</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">
+          <h2>Lista ćwiczeń</h2>
+          <span class="hint">Edytuj / usuń</span>
+        </div>
+        <div class="list" id="exerciseList"></div>
+      </div>
+    </section>
+
+    <!-- DIETA -->
+    <section id="view-diet" class="view" style="display:none;">
+      <div class="card">
+        <div class="section-title">
+          <h2>Dieta</h2>
+          <span class="hint">Sekcje → posiłki → składniki</span>
+        </div>
+
+        <div class="row">
+          <label style="flex:2; min-width: 220px;">
+            Nagłówek sekcji
+            <input type="text" id="dietSectionTitle" placeholder='np. "Posiłki – dzień treningowy"' />
+          </label>
+          <div style="display:flex; align-items:end; gap:10px;">
+            <button class="btn good" id="btnAddDietSection">➕ Dodaj sekcję</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">
+          <h2>Sekcje diety</h2>
+          <span class="hint">Dodawaj posiłki i składniki</span>
+        </div>
+
+        <div class="list" id="dietSections"></div>
+      </div>
+    </section>
+
+    <!-- SUPLEMENTACJA -->
+    <section id="view-supp" class="view" style="display:none;">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-title">
+            <h2>Suplementacja</h2>
+            <span class="hint">Grupowana wg pory</span>
+          </div>
+
+          <div class="row">
+            <label style="flex:1.4; min-width: 200px;">Nazwa suplementu <input type="text" id="suppName" placeholder="np. Kreatyna" /></label>
+            <label style="flex:1; min-width: 160px;">Ilość (np. tabletki) <input type="text" id="suppQty" placeholder="np. 5 / 1 porcja" /></label>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <label style="flex:1; min-width: 220px;">
+              Kiedy
+              <select id="suppTime">
+                <option>Przed śniadaniem</option>
+                <option>Do śniadania</option>
+                <option>Przed treningiem</option>
+                <option>W czasie treningu</option>
+                <option>Po treningu</option>
+                <option>Przed snem</option>
+              </select>
+            </label>
+            <div style="display:flex; align-items:end; gap:10px;">
+              <button class="btn good" id="btnAddSupp">➕ Dodaj</button>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="row">
+            <button class="btn danger" id="btnClearSuppAll">🗑️ Wyczyść wszystko</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Lista suplementów</h2>
+            <span class="hint">Kliknij, aby edytować</span>
+          </div>
+          <div class="list" id="suppList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WITAMINY -->
+    <section id="view-vits" class="view" style="display:none;">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="section-title">
+            <h2>Witaminy</h2>
+            <span class="hint">Nazwa + ilość + miara</span>
+          </div>
+
+          <div class="row">
+            <label style="flex:1.4; min-width: 220px;">Nazwa <input type="text" id="vitName" placeholder="np. Witamina D3" /></label>
+            <label style="flex:1; min-width: 140px;">Ilość <input type="text" id="vitQty" placeholder="np. 2000" /></label>
+            <label style="flex:1; min-width: 140px;">Miara <input type="text" id="vitUnit" placeholder="IU / mg / µg ..." /></label>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn good" id="btnAddVit">➕ Dodaj</button>
+            <button class="btn danger" id="btnClearVitAll">🗑️ Wyczyść wszystko</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Lista witamin</h2>
+            <span class="hint">Kliknij, aby edytować</span>
+          </div>
+          <div class="list" id="vitList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="tabs">
+    <div class="tabbar">
+      <button class="tab active" data-tab="weight">Waga<div class="dot"></div></button>
+      <button class="tab" data-tab="training">Trening<div class="dot"></div></button>
+      <button class="tab" data-tab="diet">Dieta<div class="dot"></div></button>
+      <button class="tab" data-tab="supp">Suplem.<div class="dot"></div></button>
+      <button class="tab" data-tab="vits">Witaminy<div class="dot"></div></button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Zapisano</div>
+
+<script>
+/* =========================
+   PWA: Service Worker
+========================= */
+(async function registerSW(){
+  const pill = document.getElementById("offlinePill");
+  const setStatus = () => {
+    const on = navigator.onLine;
+    pill.textContent = on ? "📶 Status: online" : "📴 Status: offline";
+  };
+  window.addEventListener("online", setStatus);
+  window.addEventListener("offline", setStatus);
+  setStatus();
+
+  if("serviceWorker" in navigator){
+    try{
+      await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+    }catch(e){
+      // bez dramatu — app i tak działa, tylko offline cache nie zadziała
+    }
+  }
+})();
+
+/* =========================
+   DANE (localStorage)
+========================= */
+const LS_KEY = "rs_fitness_app_v2";
+const DEFAULT_STATE = {
+  profile: { name: "Rafał Szeklicki" },
+  goal: { weight: "", date: "" },
+  weightEntries: [], // {id, date, weight}
+  trainings: {
+    t1: { title: "Trening nr 1", exercises: [] },
+    t2: { title: "Trening nr 2", exercises: [] },
+    t3: { title: "Trening nr 3", exercises: [] },
+    t4: { title: "Trening nr 4", exercises: [] },
+    t5: { title: "Trening nr 5", exercises: [] }
+  },
+  diet: { sections: [] },
+  supplements: { items: [] },
+  vitamins: { items: [] }
+};
+
+function uid(){ return Math.random().toString(16).slice(2) + Date.now().toString(16); }
+function deepMerge(base, extra){
+  if(typeof base !== "object" || base === null) return extra ?? base;
+  if(Array.isArray(base)) return Array.isArray(extra) ? extra : base;
+  const out = {...base};
+  for(const k of Object.keys(extra || {})){
+    out[k] = (k in base) ? deepMerge(base[k], extra[k]) : extra[k];
+  }
+  return out;
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return structuredClone(DEFAULT_STATE);
+    return deepMerge(structuredClone(DEFAULT_STATE), JSON.parse(raw));
+  }catch(e){
+    return structuredClone(DEFAULT_STATE);
+  }
+}
+let state = loadState();
+
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  toast("Zapisano ✅");
+}
+
+/* =========================
+   UI helpers
+========================= */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 1200);
+}
+
+function fmtKg(v){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return "—";
+  return n.toFixed(1) + " kg";
+}
+function byDateAsc(a,b){ return (a.date||"").localeCompare(b.date||""); }
+function byDateDesc(a,b){ return (b.date||"").localeCompare(a.date||""); }
+
+/* =========================
+   TABS
+========================= */
+let activeTab = "weight";
+let activeTrainingKey = "t1";
+
+function setActiveTab(tab){
+  activeTab = tab;
+  $$(".tab").forEach(btn=>btn.classList.toggle("active", btn.dataset.tab === tab));
+  $$(".view").forEach(v=>v.style.display="none");
+
+  if(tab === "weight"){ $("#view-weight").style.display="block"; renderWeight(); }
+  if(tab === "training"){ $("#view-training").style.display="block"; renderTraining(); }
+  if(tab === "diet"){ $("#view-diet").style.display="block"; renderDiet(); }
+  if(tab === "supp"){ $("#view-supp").style.display="block"; renderSupp(); }
+  if(tab === "vits"){ $("#view-vits").style.display="block"; renderVits(); }
+}
+$$(".tab").forEach(btn=>btn.addEventListener("click", ()=>setActiveTab(btn.dataset.tab)));
+
+/* =========================
+   WAGA: filtrowanie + wykres offline (canvas)
+========================= */
+function getFilteredEntries(){
+  const from = $("#filterFrom").value || "";
+  const to = $("#filterTo").value || "";
+  let entries = [...state.weightEntries].sort(byDateAsc);
+  if(from) entries = entries.filter(e => e.date >= from);
+  if(to) entries = entries.filter(e => e.date <= to);
+  return entries;
+}
+function monthlySeries(entries){
+  const map = new Map(); // ym -> weights[]
+  for(const e of entries){
+    const ym = (e.date || "").slice(0,7);
+    if(!ym) continue;
+    if(!map.has(ym)) map.set(ym, []);
+    map.get(ym).push(Number(e.weight));
+  }
+  const labels = [...map.keys()].sort();
+  const values = labels.map(l=>{
+    const arr = map.get(l) || [];
+    const avg = arr.reduce((a,b)=>a+b,0) / (arr.length || 1);
+    return Number.isFinite(avg) ? avg : null;
+  });
+  return { labels, values };
+}
+
+function drawLineChart(canvas, labels, values){
+  // High DPI
+  const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+  const cssW = canvas.clientWidth || 600;
+  const cssH = canvas.clientHeight || 220;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  // colors
+  const grid = "rgba(255,255,255,.10)";
+  const text = "rgba(169,182,211,.95)";
+  const line = "rgba(79,140,255,.95)";
+  const dot = "rgba(43,212,163,.95)";
+
+  ctx.clearRect(0,0,cssW,cssH);
+
+  const padL = 44, padR = 14, padT = 14, padB = 30;
+  const w = cssW - padL - padR;
+  const h = cssH - padT - padB;
+
+  // find min/max
+  const nums = values.filter(v => Number.isFinite(v));
+  const minV = (nums.length ? Math.min(...nums) : 0);
+  const maxV = (nums.length ? Math.max(...nums) : 1);
+  const span = (maxV - minV) || 1;
+
+  // grid (y lines 4)
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = grid;
+  for(let i=0;i<=4;i++){
+    const y = padT + (h*(i/4));
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL+w, y);
+    ctx.stroke();
+
+    // y labels
+    const v = (maxV - span*(i/4));
+    ctx.fillStyle = text;
+    ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillText(v.toFixed(1), padL-8, y);
+  }
+
+  // x labels (max 6)
+  const n = labels.length;
+  const step = Math.max(1, Math.ceil(n / 6));
+
+  ctx.fillStyle = text;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  // line path
+  const points = [];
+  for(let i=0;i<n;i++){
+    const v = values[i];
+    if(!Number.isFinite(v)) { points.push(null); continue; }
+    const x = padL + (n===1 ? w/2 : (w*(i/(n-1))));
+    const y = padT + (h*(1 - ((v - minV)/span)));
+    points.push({x,y,v});
+  }
+
+  // draw line
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let started = false;
+  points.forEach(p=>{
+    if(!p) return;
+    if(!started){ ctx.moveTo(p.x,p.y); started = true; }
+    else ctx.lineTo(p.x,p.y);
+  });
+  ctx.stroke();
+
+  // dots + x labels
+  points.forEach((p,i)=>{
+    if(!p) return;
+    ctx.fillStyle = dot;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,3,0,Math.PI*2);
+    ctx.fill();
+
+    if(i % step === 0){
+      ctx.fillStyle = text;
+      ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      const lx = padL + (n===1 ? w/2 : (w*(i/(n-1))));
+      ctx.fillText(labels[i], lx, padT + h + 8);
+    }
+  });
+
+  if(n === 0){
+    ctx.fillStyle = text;
+    ctx.font = "13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Brak danych do wykresu", padL + w/2, padT + h/2);
+  }
+}
+
+function renderWeight(){
+  $("#goalWeight").value = state.goal.weight ?? "";
+  $("#goalDate").value = state.goal.date ?? "";
+
+  const latest = [...state.weightEntries].sort(byDateDesc)[0];
+  $("#kpiLast").textContent = latest ? fmtKg(latest.weight) : "—";
+
+  const goalW = Number(state.goal.weight);
+  const lastW = latest ? Number(latest.weight) : NaN;
+  if(Number.isFinite(goalW) && Number.isFinite(lastW)){
+    const diff = (lastW - goalW);
+    const sign = diff > 0 ? "−" : "+";
+    $("#kpiDiff").textContent = (diff === 0 ? "0.0 kg" : `${sign} ${Math.abs(diff).toFixed(1)} kg`);
+  } else $("#kpiDiff").textContent = "—";
+  $("#kpiEta").textContent = state.goal.date ? state.goal.date : "—";
+
+  const list = $("#weightList");
+  list.innerHTML = "";
+  const filtered = getFilteredEntries().sort(byDateDesc);
+
+  if(filtered.length === 0){
+    list.innerHTML = `<div class="item"><div class="muted">Brak wpisów. Dodaj pierwszy wpis wagi.</div></div>`;
+  } else {
+    for(const e of filtered){
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `
+        <div class="item-head">
+          <div class="item-title">
+            <b>${e.date}</b>
+            <span>${fmtKg(e.weight)}</span>
+          </div>
+          <div class="right">
+            <button class="btn small" data-act="edit">Edytuj</button>
+            <button class="btn small danger" data-act="del">Usuń</button>
+          </div>
+        </div>
+      `;
+      div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+        const w = prompt("Waga (kg):", String(e.weight));
+        if(w === null) return;
+        const d = prompt("Data (YYYY-MM-DD):", e.date);
+        if(d === null) return;
+        const nw = Number(String(w).replace(",", "."));
+        if(!d || !Number.isFinite(nw)) return toast("Błędne dane ❌");
+        e.date = d;
+        e.weight = Number(nw.toFixed(1));
+        saveState();
+        renderWeight();
+      });
+      div.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+        if(!confirm("Usunąć wpis?")) return;
+        state.weightEntries = state.weightEntries.filter(x=>x.id !== e.id);
+        saveState();
+        renderWeight();
+      });
+      list.appendChild(div);
+    }
+  }
+
+  const series = monthlySeries(getFilteredEntries());
+  drawLineChart($("#weightChart"), series.labels, series.values);
+}
+
+$("#btnAddWeight").addEventListener("click", ()=>{
+  const date = $("#weighDate").value;
+  const wRaw = $("#weighValue").value;
+  const w = Number(String(wRaw).replace(",", "."));
+  if(!date || !Number.isFinite(w)) return toast("Uzupełnij datę i wagę ❌");
+  state.weightEntries.push({ id: uid(), date, weight: Number(w.toFixed(1)) });
+  state.weightEntries.sort(byDateAsc);
+  saveState();
+  $("#weighValue").value = "";
+  renderWeight();
+});
+$("#btnClearWeightForm").addEventListener("click", ()=>{ $("#weighDate").value=""; $("#weighValue").value=""; });
+$("#btnSaveGoal").addEventListener("click", ()=>{
+  state.goal.weight = $("#goalWeight").value;
+  state.goal.date = $("#goalDate").value;
+  saveState();
+  renderWeight();
+});
+$("#btnApplyFilter").addEventListener("click", renderWeight);
+$("#btnResetFilter").addEventListener("click", ()=>{
+  $("#filterFrom").value=""; $("#filterTo").value="";
+  renderWeight();
+});
+
+/* =========================
+   TRENINGI (tryby 1-5)
+========================= */
+let draftExercise = null;
+
+function setTrainingMode(key){
+  activeTrainingKey = key;
+  $("#trainingSeg").querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.t === key);
+  });
+  renderTraining();
+}
+$("#trainingSeg").addEventListener("click", (e)=>{
+  const btn = e.target.closest("button[data-t]");
+  if(!btn) return;
+  setTrainingMode(btn.dataset.t);
+});
+
+function renderTraining(){
+  const t = state.trainings[activeTrainingKey];
+  $("#trainingTitle").textContent = t.title;
+
+  const list = $("#exerciseList");
+  list.innerHTML = "";
+
+  if(t.exercises.length === 0){
+    list.innerHTML = `<div class="item"><div class="muted">Brak ćwiczeń. Dodaj pierwsze ćwiczenie.</div></div>`;
+  } else {
+    t.exercises.forEach(ex=>{
+      const div = document.createElement("div");
+      div.className = "item";
+      const setsSummary = ex.sets.map((s,i)=>`S${i+1}: ${s.reps}x${s.weight}kg`).join(" • ");
+      div.innerHTML = `
+        <div class="item-head">
+          <div class="item-title">
+            <b>${ex.name}</b>
+            <span>${setsSummary}</span>
+          </div>
+          <div class="right">
+            <button class="btn small" data-act="edit">Edytuj</button>
+            <button class="btn small danger" data-act="del">Usuń</button>
+          </div>
+        </div>
+      `;
+      div.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+        if(!confirm("Usunąć ćwiczenie?")) return;
+        t.exercises = t.exercises.filter(x=>x.id !== ex.id);
+        saveState();
+        renderTraining();
+      });
+      div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+        $("#exName").value = ex.name;
+        $("#exSets").value = ex.sets.length;
+        draftExercise = { ...ex, sets: ex.sets.map(s=>({...s})) };
+        buildSetsUI(draftExercise.sets);
+        $("#setsEditor").style.display = "block";
+      });
+      list.appendChild(div);
+    });
+  }
+}
+
+function buildSetsUI(sets){
+  const cont = $("#setsList");
+  cont.innerHTML = "";
+  sets.forEach((s, idx)=>{
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>Seria ${idx+1}</b>
+          <span class="muted">Ustaw powtórzenia i ciężar</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>Powtórzenia <input type="number" min="0" step="1" inputmode="numeric" data-reps value="${s.reps ?? ""}"></label>
+        <label>Ciężar (kg) <input type="number" min="0" step="0.5" inputmode="decimal" data-weight value="${s.weight ?? ""}"></label>
+      </div>
+    `;
+    const reps = div.querySelector("[data-reps]");
+    const weight = div.querySelector("[data-weight]");
+    reps.addEventListener("input", ()=>{ s.reps = reps.value; });
+    weight.addEventListener("input", ()=>{ s.weight = weight.value; });
+    cont.appendChild(div);
+  });
+}
+
+$("#btnBuildSets").addEventListener("click", ()=>{
+  const name = $("#exName").value.trim();
+  const setsN = Number($("#exSets").value);
+  if(!name || !Number.isFinite(setsN) || setsN < 1) return toast("Uzupełnij nazwę i liczbę serii ❌");
+
+  draftExercise = { id: uid(), name, sets: Array.from({length: setsN}).map(()=>({ reps:"", weight:"" })) };
+  buildSetsUI(draftExercise.sets);
+  $("#setsEditor").style.display = "block";
+});
+
+$("#btnSaveExercise").addEventListener("click", ()=>{
+  if(!draftExercise) return;
+  draftExercise.name = $("#exName").value.trim();
+  if(!draftExercise.name) return toast("Brak nazwy ćwiczenia ❌");
+
+  draftExercise.sets = draftExercise.sets.map(s=>({
+    reps: String(s.reps ?? "").trim(),
+    weight: String(s.weight ?? "").trim()
+  }));
+
+  const t = state.trainings[activeTrainingKey];
+  const idx = t.exercises.findIndex(x=>x.id === draftExercise.id);
+  if(idx >= 0) t.exercises[idx] = draftExercise; else t.exercises.push(draftExercise);
+
+  saveState();
+  toast("Ćwiczenie zapisane ✅");
+  $("#btnClearExercise").click();
+  renderTraining();
+});
+
+$("#btnClearExercise").addEventListener("click", ()=>{
+  $("#exName").value = "";
+  $("#exSets").value = "";
+  $("#setsEditor").style.display = "none";
+  $("#setsList").innerHTML = "";
+  draftExercise = null;
+});
+
+/* =========================
+   DIETA
+========================= */
+function renderDiet(){
+  const root = $("#dietSections");
+  root.innerHTML = "";
+
+  if(state.diet.sections.length === 0){
+    root.innerHTML = `<div class="item"><div class="muted">Brak sekcji. Dodaj np. „Posiłki – dzień treningowy”.</div></div>`;
+    return;
+  }
+
+  state.diet.sections.forEach(sec=>{
+    const secEl = document.createElement("div");
+    secEl.className = "item";
+    secEl.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${sec.title}</b>
+          <span>${sec.meals?.length || 0} posiłków</span>
+        </div>
+        <div class="right">
+          <button class="btn small" data-act="addMeal">➕ Posiłek</button>
+          <button class="btn small" data-act="editSec">Edytuj</button>
+          <button class="btn small danger" data-act="delSec">Usuń</button>
+        </div>
+      </div>
+      <div class="list" data-meals></div>
+    `;
+
+    secEl.querySelector('[data-act="delSec"]').addEventListener("click", ()=>{
+      if(!confirm("Usunąć całą sekcję?")) return;
+      state.diet.sections = state.diet.sections.filter(x=>x.id !== sec.id);
+      saveState(); renderDiet();
+    });
+
+    secEl.querySelector('[data-act="editSec"]').addEventListener("click", ()=>{
+      const t = prompt("Tytuł sekcji:", sec.title);
+      if(t === null) return;
+      sec.title = t.trim() || sec.title;
+      saveState(); renderDiet();
+    });
+
+    secEl.querySelector('[data-act="addMeal"]').addEventListener("click", ()=>{
+      const title = prompt("Nazwa posiłku (np. Śniadanie):", "Posiłek");
+      if(title === null) return;
+      sec.meals = sec.meals || [];
+      sec.meals.push({ id: uid(), title: title.trim() || "Posiłek", items: [] });
+      saveState(); renderDiet();
+    });
+
+    const mealsEl = secEl.querySelector("[data-meals]");
+    (sec.meals || []).forEach(meal=>{
+      const mealEl = document.createElement("div");
+      mealEl.className = "item";
+      mealEl.innerHTML = `
+        <div class="item-head">
+          <div class="item-title">
+            <b>${meal.title}</b>
+            <span>${meal.items?.length || 0} składników</span>
+          </div>
+          <div class="right">
+            <button class="btn small" data-act="addItem">➕ Składnik</button>
+            <button class="btn small" data-act="editMeal">Edytuj</button>
+            <button class="btn small danger" data-act="delMeal">Usuń</button>
+          </div>
+        </div>
+        <div class="list" data-items></div>
+      `;
+
+      mealEl.querySelector('[data-act="delMeal"]').addEventListener("click", ()=>{
+        if(!confirm("Usunąć posiłek?")) return;
+        sec.meals = sec.meals.filter(x=>x.id !== meal.id);
+        saveState(); renderDiet();
+      });
+      mealEl.querySelector('[data-act="editMeal"]').addEventListener("click", ()=>{
+        const t = prompt("Nazwa posiłku:", meal.title);
+        if(t === null) return;
+        meal.title = t.trim() || meal.title;
+        saveState(); renderDiet();
+      });
+      mealEl.querySelector('[data-act="addItem"]').addEventListener("click", ()=>{
+        const name = prompt("Nazwa składnika:", "");
+        if(name === null) return;
+        const qty = prompt("Ilość (np. 200):", "");
+        if(qty === null) return;
+        const unit = prompt("Jednostka (g / ml):", "g");
+        if(unit === null) return;
+        meal.items = meal.items || [];
+        meal.items.push({ id: uid(), name: name.trim() || "Składnik", qty: qty.trim(), unit: unit.trim() || "g" });
+        saveState(); renderDiet();
+      });
+
+      const itemsEl = mealEl.querySelector("[data-items]");
+      (meal.items || []).forEach(it=>{
+        const itEl = document.createElement("div");
+        itEl.className = "item";
+        itEl.innerHTML = `
+          <div class="item-head">
+            <div class="item-title">
+              <b>${it.name}</b>
+              <span>${it.qty || "—"} ${it.unit || ""}</span>
+            </div>
+            <div class="right">
+              <button class="btn small" data-act="edit">Edytuj</button>
+              <button class="btn small danger" data-act="del">Usuń</button>
+            </div>
+          </div>
+        `;
+        itEl.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+          meal.items = meal.items.filter(x=>x.id !== it.id);
+          saveState(); renderDiet();
+        });
+        itEl.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          const n = prompt("Nazwa:", it.name); if(n === null) return;
+          const q = prompt("Ilość:", it.qty); if(q === null) return;
+          const u = prompt("Jednostka:", it.unit); if(u === null) return;
+          it.name = n.trim() || it.name; it.qty = q.trim(); it.unit = u.trim();
+          saveState(); renderDiet();
+        });
+        itemsEl.appendChild(itEl);
+      });
+
+      mealsEl.appendChild(mealEl);
+    });
+
+    root.appendChild(secEl);
+  });
+}
+$("#btnAddDietSection").addEventListener("click", ()=>{
+  const title = $("#dietSectionTitle").value.trim();
+  if(!title) return toast("Wpisz tytuł sekcji ❌");
+  state.diet.sections.push({ id: uid(), title, meals: [] });
+  $("#dietSectionTitle").value = "";
+  saveState(); renderDiet();
+});
+
+/* =========================
+   SUPLEMENTACJA
+========================= */
+function renderSupp(){
+  const root = $("#suppList");
+  root.innerHTML = "";
+
+  const times = [
+    "Przed śniadaniem","Do śniadania","Przed treningiem",
+    "W czasie treningu","Po treningu","Przed snem"
+  ];
+  const grouped = new Map(times.map(t=>[t, []]));
+  for(const it of state.supplements.items){
+    if(!grouped.has(it.time)) grouped.set(it.time, []);
+    grouped.get(it.time).push(it);
+  }
+
+  times.forEach(t=>{
+    const items = grouped.get(t) || [];
+    const box = document.createElement("div");
+    box.className = "item";
+    box.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${t}</b>
+          <span>${items.length} pozycji</span>
+        </div>
+      </div>
+      <div class="list" data-box></div>
+    `;
+    const list = box.querySelector("[data-box]");
+
+    if(items.length === 0){
+      list.innerHTML = `<div class="item"><div class="muted">Brak.</div></div>`;
+    } else {
+      items.forEach(it=>{
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div class="item-head">
+            <div class="item-title">
+              <b>${it.name}</b>
+              <span>${it.qty}</span>
+            </div>
+            <div class="right">
+              <button class="btn small" data-act="edit">Edytuj</button>
+              <button class="btn small danger" data-act="del">Usuń</button>
+            </div>
+          </div>
+        `;
+        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+          state.supplements.items = state.supplements.items.filter(x=>x.id !== it.id);
+          saveState(); renderSupp();
+        });
+        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          const n = prompt("Nazwa suplementu:", it.name); if(n === null) return;
+          const q = prompt("Ilość:", it.qty); if(q === null) return;
+          it.name = n.trim() || it.name;
+          it.qty = q.trim() || it.qty;
+          saveState(); renderSupp();
+        });
+        list.appendChild(row);
+      });
+    }
+
+    root.appendChild(box);
+  });
+}
+$("#btnAddSupp").addEventListener("click", ()=>{
+  const name = $("#suppName").value.trim();
+  const qty = $("#suppQty").value.trim();
+  const time = $("#suppTime").value;
+  if(!name || !qty) return toast("Uzupełnij nazwę i ilość ❌");
+  state.supplements.items.push({ id: uid(), time, name, qty });
+  $("#suppName").value = ""; $("#suppQty").value = "";
+  saveState(); renderSupp();
+});
+$("#btnClearSuppAll").addEventListener("click", ()=>{
+  if(!confirm("Wyczyścić całą suplementację?")) return;
+  state.supplements.items = [];
+  saveState(); renderSupp();
+});
+
+/* =========================
+   WITAMINY
+========================= */
+function renderVits(){
+  const root = $("#vitList");
+  root.innerHTML = "";
+  if(state.vitamins.items.length === 0){
+    root.innerHTML = `<div class="item"><div class="muted">Brak wpisów.</div></div>`;
+    return;
+  }
+  state.vitamins.items.forEach(it=>{
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${it.name}</b>
+          <span>${it.qty} ${it.unit}</span>
+        </div>
+        <div class="right">
+          <button class="btn small" data-act="edit">Edytuj</button>
+          <button class="btn small danger" data-act="del">Usuń</button>
+        </div>
+      </div>
+    `;
+    div.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+      state.vitamins.items = state.vitamins.items.filter(x=>x.id !== it.id);
+      saveState(); renderVits();
+    });
+    div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+      const n = prompt("Nazwa:", it.name); if(n === null) return;
+      const q = prompt("Ilość:", it.qty); if(q === null) return;
+      const u = prompt("Miara:", it.unit); if(u === null) return;
+      it.name = n.trim() || it.name;
+      it.qty = q.trim() || it.qty;
+      it.unit = u.trim() || it.unit;
+      saveState(); renderVits();
+    });
+    root.appendChild(div);
+  });
+}
+$("#btnAddVit").addEventListener("click", ()=>{
+  const name = $("#vitName").value.trim();
+  const qty = $("#vitQty").value.trim();
+  const unit = $("#vitUnit").value.trim();
+  if(!name || !qty || !unit) return toast("Uzupełnij nazwę, ilość i miarę ❌");
+  state.vitamins.items.push({ id: uid(), name, qty, unit });
+  $("#vitName").value=""; $("#vitQty").value=""; $("#vitUnit").value="";
+  saveState(); renderVits();
+});
+$("#btnClearVitAll").addEventListener("click", ()=>{
+  if(!confirm("Wyczyścić wszystkie witaminy?")) return;
+  state.vitamins.items = [];
+  saveState(); renderVits();
+});
+
+/* =========================
+   BACKUP: eksport / import
+========================= */
+$("#btnBackup").addEventListener("click", ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `fitness-rafa-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Eksport gotowy ✅");
+});
+$("#btnRestore").addEventListener("click", ()=>{
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if(!file) return;
+    const text = await file.text();
+    try{
+      const parsed = JSON.parse(text);
+      state = deepMerge(structuredClone(DEFAULT_STATE), parsed);
+      saveState();
+      renderAll();
+      toast("Import OK ✅");
+    }catch(e){
+      toast("Błędny plik ❌");
+    }
+  };
+  input.click();
+});
+
+/* =========================
+   START
+========================= */
+function renderAll(){
+  renderWeight();
+  renderTraining();
+  renderDiet();
+  renderSupp();
+  renderVits();
+}
+(function init(){
+  const today = new Date().toISOString().slice(0,10);
+  $("#weighDate").value = today;
+
+  // start: Trening 1 aktywny
+  setTrainingMode("t1");
+
+  renderAll();
+  setActiveTab("weight");
+})();
+</script>
+</body>
+</html>
