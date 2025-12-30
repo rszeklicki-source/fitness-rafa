@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon-192.png" />
-  <title>Fitness – Rafał Szeklicki</title>
+  <title>Fitness – Tracker</title>
 
   <style>
     :root{
@@ -50,6 +50,7 @@
       z-index:-1;
       pointer-events:none;
     }
+
     header{
       padding: 18px 16px 10px;
       max-width: 1100px;
@@ -69,10 +70,15 @@
     }
     .brand{ display:flex; flex-direction:column; gap:2px; min-width: 0; }
     .brand h1{
-      margin:0; font-size:16px; letter-spacing:.2px;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .brand .sub{ color:var(--muted); font-size:12px; }
+
     .pill{
       display:flex; align-items:center; gap:8px;
       padding:8px 10px;
@@ -82,11 +88,13 @@
       color: var(--muted);
       font-size:12px;
     }
+
     main{
       max-width: 1100px;
       margin: 0 auto;
       padding: 10px 16px 110px;
     }
+
     .card{
       background: var(--card);
       border:1px solid var(--line);
@@ -95,15 +103,19 @@
       padding: 14px;
       backdrop-filter: blur(10px);
     }
+
     .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
     @media(min-width: 980px){ .grid-2{ grid-template-columns: 1fr 1fr; } }
+
     .section-title{
       display:flex; align-items:center; justify-content:space-between;
       gap:10px; margin-bottom:10px;
     }
     .section-title h2{ margin:0; font-size:14px; letter-spacing:.2px; }
     .section-title .hint{ color:var(--muted); font-size:12px; }
+
     .row{ display:flex; gap:10px; flex-wrap:wrap; }
+
     label{
       display:flex; flex-direction:column; gap:6px;
       font-size:12px; color: var(--muted);
@@ -136,6 +148,7 @@
       justify-content:center;
       transition: transform .05s ease, background .2s ease;
       user-select:none;
+      white-space:nowrap;
     }
     .btn:active{ transform: scale(.99); }
     .btn.primary{
@@ -177,7 +190,6 @@
     .item-title span{ font-size: 12px; color: var(--muted); }
     .divider{ height:1px; background: rgba(255,255,255,.10); margin: 10px 0; }
 
-    /* DOLNE TABY */
     .tabs{
       position:fixed; left:0; right:0; bottom:0;
       padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
@@ -237,9 +249,18 @@
       z-index: 20;
     }
     .toast.show{ opacity: 1; }
+
+    canvas{
+      width: 100%;
+      height: 220px;
+      display:block;
+      background: rgba(255,255,255,.03);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
     .muted{ color: var(--muted); font-size: 12px; }
-    .right{ display:flex; gap:8px; align-items:center; }
-    canvas{ width: 100%; height: 220px; display:block; background: rgba(255,255,255,.03); border-radius: 14px; border: 1px solid rgba(255,255,255,.08); }
+    .right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
     .kpi{ display:flex; gap:10px; flex-wrap:wrap; }
     .kpi .box{
@@ -262,7 +283,7 @@
       color: var(--muted);
     }
 
-    /* TRYBY TRENINGU (1-5) */
+    /* tryby treningu */
     .seg{
       display:flex; gap:8px; flex-wrap:wrap;
       padding: 10px;
@@ -272,8 +293,7 @@
       margin-bottom: 12px;
     }
     .seg button{
-      flex:1;
-      min-width: 92px;
+      flex:1; min-width: 92px;
       border-radius: 14px;
       padding: 10px 10px;
       border:1px solid rgba(255,255,255,.12);
@@ -287,6 +307,37 @@
       border-color: rgba(79,140,255,.55);
       background: rgba(79,140,255,.18);
     }
+
+    /* MODAL PROFILU */
+    .modal{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      padding: 16px;
+      background: rgba(0,0,0,.55);
+      z-index: 50;
+    }
+    .modal.show{ display:flex; }
+    .modal-card{
+      width: min(560px, 100%);
+      background: rgba(10,16,28,.78);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .modal-card h3{
+      margin: 0 0 6px 0;
+      font-size: 15px;
+      letter-spacing:.2px;
+    }
+    .modal-card p{
+      margin: 0 0 12px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 
@@ -297,11 +348,12 @@
   <header>
     <div class="topbar">
       <div class="brand">
-        <h1>Rafał Szeklicki</h1>
-        <div class="sub">Offline • Fullscreen • Zapis lokalny</div>
+        <h1 id="hdrName">Twoje imię i nazwisko</h1>
+        <div class="sub">Offline • Fullscreen • Dane zapisane na tym telefonie</div>
       </div>
       <div class="right">
         <div class="pill" id="offlinePill">📶 Status: sprawdzam…</div>
+        <button class="btn small" id="btnProfile">Profil</button>
         <button class="btn small" id="btnBackup">Eksport</button>
         <button class="btn small" id="btnRestore">Import</button>
       </div>
@@ -315,7 +367,7 @@
         <div class="card">
           <div class="section-title">
             <h2>Waga – wpis tygodniowy</h2>
-            <span class="hint">Zapisuje się na telefonie</span>
+            <span class="hint">Zapisuje się lokalnie</span>
           </div>
 
           <div class="row">
@@ -385,7 +437,7 @@
       <div class="card">
         <div class="section-title">
           <h2 id="trainingTitle">Trening</h2>
-          <span class="hint">Tryb 1–5 (osobne)</span>
+          <span class="hint">Tryb 1–5</span>
         </div>
 
         <div class="seg" id="trainingSeg">
@@ -425,7 +477,6 @@
         </div>
 
         <div class="divider"></div>
-
         <div class="section-title">
           <h2>Lista ćwiczeń</h2>
           <span class="hint">Edytuj / usuń</span>
@@ -542,6 +593,7 @@
     </section>
   </main>
 
+  <!-- DOLNY PASEK -->
   <div class="tabs">
     <div class="tabbar">
       <button class="tab active" data-tab="weight">Waga<div class="dot"></div></button>
@@ -554,9 +606,27 @@
 
   <div class="toast" id="toast">Zapisano</div>
 
+  <!-- MODAL: PROFIL -->
+  <div class="modal" id="profileModal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Profil użytkownika</h3>
+      <p>To imię i nazwisko zapisze się <b>na tym telefonie</b>. Każda osoba korzystająca z linku ma swój własny profil i swoje dane.</p>
+
+      <label style="min-width: 100%;">
+        Imię i nazwisko
+        <input type="text" id="profileName" placeholder="np. Rafał Szeklicki" />
+      </label>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="btn primary" id="btnSaveProfile">✅ Zapisz</button>
+        <button class="btn" id="btnCloseProfile">Zamknij</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* =========================
-   PWA: Service Worker
+   PWA: Service Worker + status
 ========================= */
 (async function registerSW(){
   const pill = document.getElementById("offlinePill");
@@ -569,22 +639,19 @@
   setStatus();
 
   if("serviceWorker" in navigator){
-    try{
-      await navigator.serviceWorker.register("./sw.js", { scope: "./" });
-    }catch(e){
-      // bez dramatu — app i tak działa, tylko offline cache nie zadziała
-    }
+    try{ await navigator.serviceWorker.register("./sw.js", { scope: "./" }); }catch(e){}
   }
 })();
 
 /* =========================
-   DANE (localStorage)
+   STATE (localStorage)
 ========================= */
-const LS_KEY = "rs_fitness_app_v2";
+const LS_KEY = "fitness_tracker_variant1_v1";
+
 const DEFAULT_STATE = {
-  profile: { name: "Rafał Szeklicki" },
+  profile: { name: "" },          // <- każdy wpisuje swoje
   goal: { weight: "", date: "" },
-  weightEntries: [], // {id, date, weight}
+  weightEntries: [],              // {id, date, weight}
   trainings: {
     t1: { title: "Trening nr 1", exercises: [] },
     t2: { title: "Trening nr 2", exercises: [] },
@@ -602,9 +669,7 @@ function deepMerge(base, extra){
   if(typeof base !== "object" || base === null) return extra ?? base;
   if(Array.isArray(base)) return Array.isArray(extra) ? extra : base;
   const out = {...base};
-  for(const k of Object.keys(extra || {})){
-    out[k] = (k in base) ? deepMerge(base[k], extra[k]) : extra[k];
-  }
+  for(const k of Object.keys(extra || {})) out[k] = (k in base) ? deepMerge(base[k], extra[k]) : extra[k];
   return out;
 }
 function loadState(){
@@ -617,7 +682,6 @@ function loadState(){
   }
 }
 let state = loadState();
-
 function saveState(){
   localStorage.setItem(LS_KEY, JSON.stringify(state));
   toast("Zapisano ✅");
@@ -635,14 +699,42 @@ function toast(msg){
   el.classList.add("show");
   setTimeout(()=>el.classList.remove("show"), 1200);
 }
-
+function byDateAsc(a,b){ return (a.date||"").localeCompare(b.date||""); }
+function byDateDesc(a,b){ return (b.date||"").localeCompare(a.date||""); }
 function fmtKg(v){
   const n = Number(v);
   if(!Number.isFinite(n)) return "—";
   return n.toFixed(1) + " kg";
 }
-function byDateAsc(a,b){ return (a.date||"").localeCompare(b.date||""); }
-function byDateDesc(a,b){ return (b.date||"").localeCompare(a.date||""); }
+
+/* =========================
+   PROFIL (wariant 1)
+========================= */
+function refreshHeaderName(){
+  const n = (state.profile?.name || "").trim();
+  $("#hdrName").textContent = n ? n : "Twoje imię i nazwisko";
+}
+function openProfileModal(force=false){
+  $("#profileName").value = (state.profile?.name || "").trim();
+  $("#profileModal").classList.add("show");
+  $("#profileModal").setAttribute("aria-hidden", "false");
+  $("#btnCloseProfile").style.display = force ? "none" : "inline-flex";
+  setTimeout(()=>$("#profileName").focus(), 50);
+}
+function closeProfileModal(){
+  $("#profileModal").classList.remove("show");
+  $("#profileModal").setAttribute("aria-hidden", "true");
+}
+$("#btnProfile").addEventListener("click", ()=> openProfileModal(false));
+$("#btnCloseProfile").addEventListener("click", closeProfileModal);
+$("#btnSaveProfile").addEventListener("click", ()=>{
+  const n = $("#profileName").value.trim();
+  if(!n) return toast("Wpisz imię i nazwisko ❌");
+  state.profile.name = n;
+  saveState();
+  refreshHeaderName();
+  closeProfileModal();
+});
 
 /* =========================
    TABS
@@ -664,7 +756,7 @@ function setActiveTab(tab){
 $$(".tab").forEach(btn=>btn.addEventListener("click", ()=>setActiveTab(btn.dataset.tab)));
 
 /* =========================
-   WAGA: filtrowanie + wykres offline (canvas)
+   WAGA (chart offline)
 ========================= */
 function getFilteredEntries(){
   const from = $("#filterFrom").value || "";
@@ -690,18 +782,15 @@ function monthlySeries(entries){
   });
   return { labels, values };
 }
-
 function drawLineChart(canvas, labels, values){
-  // High DPI
   const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
   const cssW = canvas.clientWidth || 600;
   const cssH = canvas.clientHeight || 220;
   canvas.width = cssW * dpr;
   canvas.height = cssH * dpr;
   const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 
-  // colors
   const grid = "rgba(255,255,255,.10)";
   const text = "rgba(169,182,211,.95)";
   const line = "rgba(79,140,255,.95)";
@@ -713,23 +802,17 @@ function drawLineChart(canvas, labels, values){
   const w = cssW - padL - padR;
   const h = cssH - padT - padB;
 
-  // find min/max
   const nums = values.filter(v => Number.isFinite(v));
   const minV = (nums.length ? Math.min(...nums) : 0);
   const maxV = (nums.length ? Math.max(...nums) : 1);
   const span = (maxV - minV) || 1;
 
-  // grid (y lines 4)
   ctx.lineWidth = 1;
   ctx.strokeStyle = grid;
   for(let i=0;i<=4;i++){
     const y = padT + (h*(i/4));
-    ctx.beginPath();
-    ctx.moveTo(padL, y);
-    ctx.lineTo(padL+w, y);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+w, y); ctx.stroke();
 
-    // y labels
     const v = (maxV - span*(i/4));
     ctx.fillStyle = text;
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -738,15 +821,9 @@ function drawLineChart(canvas, labels, values){
     ctx.fillText(v.toFixed(1), padL-8, y);
   }
 
-  // x labels (max 6)
   const n = labels.length;
   const step = Math.max(1, Math.ceil(n / 6));
 
-  ctx.fillStyle = text;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-
-  // line path
   const points = [];
   for(let i=0;i<n;i++){
     const v = values[i];
@@ -756,7 +833,6 @@ function drawLineChart(canvas, labels, values){
     points.push({x,y,v});
   }
 
-  // draw line
   ctx.strokeStyle = line;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -768,17 +844,16 @@ function drawLineChart(canvas, labels, values){
   });
   ctx.stroke();
 
-  // dots + x labels
   points.forEach((p,i)=>{
     if(!p) return;
     ctx.fillStyle = dot;
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,3,0,Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
 
     if(i % step === 0){
       ctx.fillStyle = text;
       ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
       const lx = padL + (n===1 ? w/2 : (w*(i/(n-1))));
       ctx.fillText(labels[i], lx, padT + h + 8);
     }
@@ -882,7 +957,7 @@ $("#btnResetFilter").addEventListener("click", ()=>{
 });
 
 /* =========================
-   TRENINGI (tryby 1-5)
+   TRENINGI (t1..t5)
 ========================= */
 let draftExercise = null;
 
@@ -953,12 +1028,18 @@ function buildSetsUI(sets){
       <div class="item-head">
         <div class="item-title">
           <b>Seria ${idx+1}</b>
-          <span class="muted">Ustaw powtórzenia i ciężar</span>
+          <span class="muted">Powtórzenia i ciężar</span>
         </div>
       </div>
       <div class="row">
-        <label>Powtórzenia <input type="number" min="0" step="1" inputmode="numeric" data-reps value="${s.reps ?? ""}"></label>
-        <label>Ciężar (kg) <input type="number" min="0" step="0.5" inputmode="decimal" data-weight value="${s.weight ?? ""}"></label>
+        <label>
+          Powtórzenia
+          <input type="number" min="0" step="1" inputmode="numeric" data-reps value="${s.reps ?? ""}">
+        </label>
+        <label>
+          Ciężar (kg)
+          <input type="number" min="0" step="0.5" inputmode="decimal" data-weight value="${s.weight ?? ""}">
+        </label>
       </div>
     `;
     const reps = div.querySelector("[data-reps]");
@@ -974,13 +1055,18 @@ $("#btnBuildSets").addEventListener("click", ()=>{
   const setsN = Number($("#exSets").value);
   if(!name || !Number.isFinite(setsN) || setsN < 1) return toast("Uzupełnij nazwę i liczbę serii ❌");
 
-  draftExercise = { id: uid(), name, sets: Array.from({length: setsN}).map(()=>({ reps:"", weight:"" })) };
+  draftExercise = {
+    id: uid(),
+    name,
+    sets: Array.from({length: setsN}).map(()=>({ reps:"", weight:"" }))
+  };
   buildSetsUI(draftExercise.sets);
   $("#setsEditor").style.display = "block";
 });
 
 $("#btnSaveExercise").addEventListener("click", ()=>{
   if(!draftExercise) return;
+
   draftExercise.name = $("#exName").value.trim();
   if(!draftExercise.name) return toast("Brak nazwy ćwiczenia ❌");
 
@@ -990,8 +1076,9 @@ $("#btnSaveExercise").addEventListener("click", ()=>{
   }));
 
   const t = state.trainings[activeTrainingKey];
-  const idx = t.exercises.findIndex(x=>x.id === draftExercise.id);
-  if(idx >= 0) t.exercises[idx] = draftExercise; else t.exercises.push(draftExercise);
+  const existingIdx = t.exercises.findIndex(x=>x.id === draftExercise.id);
+  if(existingIdx >= 0) t.exercises[existingIdx] = draftExercise;
+  else t.exercises.push(draftExercise);
 
   saveState();
   toast("Ćwiczenie zapisane ✅");
@@ -1290,7 +1377,7 @@ $("#btnBackup").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `fitness-rafa-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `fitness-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
   toast("Eksport gotowy ✅");
@@ -1308,6 +1395,7 @@ $("#btnRestore").addEventListener("click", ()=>{
       state = deepMerge(structuredClone(DEFAULT_STATE), parsed);
       saveState();
       renderAll();
+      refreshHeaderName();
       toast("Import OK ✅");
     }catch(e){
       toast("Błędny plik ❌");
@@ -1326,11 +1414,20 @@ function renderAll(){
   renderSupp();
   renderVits();
 }
+
 (function init(){
+  refreshHeaderName();
+
+  // pierwsze uruchomienie: wymuś wpisanie profilu
+  if(!(state.profile?.name || "").trim()){
+    openProfileModal(true);
+  }
+
+  // domyślna data ważenia = dziś
   const today = new Date().toISOString().slice(0,10);
   $("#weighDate").value = today;
 
-  // start: Trening 1 aktywny
+  // start: Trening 1
   setTrainingMode("t1");
 
   renderAll();
