@@ -39,7 +39,7 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* TŁO jaśniejsze */
+    /* JAŚNIEJSZE TŁO */
     .bg{
       position:fixed; inset:0;
       background:
@@ -440,13 +440,11 @@
             <input type="text" id="exName" placeholder="np. Wyciskanie sztangi leżąc" />
           </label>
 
-          <!-- ✅ ZMIANA: opis serii (dowolny tekst) -->
           <label style="flex:1.2; min-width: 220px;">
             Serie (opis)
-            <input type="text" id="exSetsDesc" placeholder='np. "3", "3 robocze + 2 rozgrzewkowe", "Top set + 3 back-off"' />
+            <input type="text" id="exSetsDesc" placeholder='np. "3 robocze + 2 rozgrzewkowe", "Top set + 3 back-off"' />
           </label>
 
-          <!-- ✅ Dodatkowo (żeby nadal było łatwo): liczba serii do wygenerowania -->
           <label style="flex:0.8; min-width: 160px;">
             Ile serii utworzyć
             <input type="number" min="0" step="1" inputmode="numeric" id="exSetsCount" placeholder="np. 3" />
@@ -619,7 +617,9 @@
   </div>
 
 <script>
-/* ========= PWA status + SW ========= */
+/* =========================
+   PWA: Service Worker + status
+========================= */
 (async function registerSW(){
   const pill = document.getElementById("offlinePill");
   const setStatus = () => pill.textContent = navigator.onLine ? "📶 Status: online" : "📴 Status: offline";
@@ -632,8 +632,18 @@
   }
 })();
 
-/* ========= State ========= */
-const LS_KEY = "fitness_tracker_variant1_v3";
+/* =========================
+   STATE (localStorage) + MIGRACJA
+========================= */
+const LS_KEY = "fitness_tracker"; // ✅ stały klucz od teraz
+
+// poprzednie klucze (żeby odzyskać dane)
+const OLD_KEYS = [
+  "fitness_tracker_variant1_v1",
+  "fitness_tracker_variant1_v2",
+  "fitness_tracker_variant1_v3",
+];
+
 const DEFAULT_STATE = {
   profile: { name: "" },
   goal: { weight: "", date: "" },
@@ -658,22 +668,49 @@ function deepMerge(base, extra){
   for(const k of Object.keys(extra || {})) out[k] = (k in base) ? deepMerge(base[k], extra[k]) : extra[k];
   return out;
 }
-function loadState(){
+
+function loadAnyKey(key){
   try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(!raw) return structuredClone(DEFAULT_STATE);
-    return deepMerge(structuredClone(DEFAULT_STATE), JSON.parse(raw));
-  }catch(e){
-    return structuredClone(DEFAULT_STATE);
-  }
-}
-let state = loadState();
-function saveState(){
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
-  toast("Zapisano ✅");
+    const raw = localStorage.getItem(key);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
 }
 
-/* ========= UI helpers ========= */
+function migrateIfNeeded(){
+  // jeśli już jest nowy klucz – nic nie rób
+  if(localStorage.getItem(LS_KEY)) return;
+
+  // szukaj po starych kluczach (od najnowszego)
+  for(const k of OLD_KEYS.slice().reverse()){
+    const data = loadAnyKey(k);
+    if(data){
+      localStorage.setItem(LS_KEY, JSON.stringify(data));
+      break;
+    }
+  }
+}
+
+migrateIfNeeded();
+
+function loadState(){
+  const raw = loadAnyKey(LS_KEY);
+  if(!raw) return structuredClone(DEFAULT_STATE);
+
+  // merge z defaultem, żeby nowe pola się dopisały
+  return deepMerge(structuredClone(DEFAULT_STATE), raw);
+}
+
+let state = loadState();
+
+function saveState(silent=false){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  if(!silent) toast("Zapisano ✅");
+}
+
+/* =========================
+   UI helpers
+========================= */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -691,7 +728,9 @@ function fmtKg(v){
   return n.toFixed(1) + " kg";
 }
 
-/* ========= Profil ========= */
+/* =========================
+   PROFIL
+========================= */
 function refreshHeaderName(){
   const n = (state.profile?.name || "").trim();
   $("#hdrName").textContent = n ? n : "Twoje imię i nazwisko";
@@ -719,7 +758,9 @@ $("#btnSaveProfile").addEventListener("click", ()=>{
   closeProfileModal();
 });
 
-/* ========= Tabs ========= */
+/* =========================
+   TABS
+========================= */
 let activeTab = "weight";
 let activeTrainingKey = "t1";
 
@@ -736,7 +777,9 @@ function setActiveTab(tab){
 }
 $$(".tab").forEach(btn=>btn.addEventListener("click", ()=>setActiveTab(btn.dataset.tab)));
 
-/* ========= Waga + wykres ========= */
+/* =========================
+   WAGA (cel + obliczenia + wykres)
+========================= */
 function getFilteredEntries(){
   const from = $("#filterFrom").value || "";
   const to = $("#filterTo").value || "";
@@ -746,7 +789,7 @@ function getFilteredEntries(){
   return entries;
 }
 function monthlySeries(entries){
-  const map = new Map();
+  const map = new Map(); // ym -> weights[]
   for(const e of entries){
     const ym = (e.date || "").slice(0,7);
     if(!ym) continue;
@@ -791,6 +834,7 @@ function drawLineChart(canvas, labels, values){
   for(let i=0;i<=4;i++){
     const y = padT + (h*(i/4));
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+w, y); ctx.stroke();
+
     const v = (maxV - span*(i/4));
     ctx.fillStyle = text;
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -826,6 +870,7 @@ function drawLineChart(canvas, labels, values){
     if(!p) return;
     ctx.fillStyle = dot;
     ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
+
     if(i % step === 0){
       ctx.fillStyle = text;
       ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -844,28 +889,36 @@ function drawLineChart(canvas, labels, values){
     ctx.fillText("Brak danych do wykresu", padL + w/2, padT + h/2);
   }
 }
+
 function renderWeight(){
+  // wypełnij pola celem
   $("#goalWeight").value = state.goal.weight ?? "";
   $("#goalDate").value = state.goal.date ?? "";
 
   const latest = [...state.weightEntries].sort(byDateDesc)[0];
   $("#kpiLast").textContent = latest ? fmtKg(latest.weight) : "—";
 
-  const goalW = Number(state.goal.weight);
+  // KPI różnicy do celu
+  const goalW = Number(String(state.goal.weight || "").replace(",", "."));
   const lastW = latest ? Number(latest.weight) : NaN;
+
   if(Number.isFinite(goalW) && Number.isFinite(lastW)){
     const diff = (lastW - goalW);
     const sign = diff > 0 ? "−" : "+";
     $("#kpiDiff").textContent = (diff === 0 ? "0.0 kg" : `${sign} ${Math.abs(diff).toFixed(1)} kg`);
-  } else $("#kpiDiff").textContent = "—";
+  } else {
+    $("#kpiDiff").textContent = "—";
+  }
+
   $("#kpiEta").textContent = state.goal.date ? state.goal.date : "—";
 
+  // lista wpisów
   const list = $("#weightList");
   list.innerHTML = "";
   const filtered = getFilteredEntries().sort(byDateDesc);
 
   if(filtered.length === 0){
-    list.innerHTML = `<div class="item"><div class="muted">Brak wpisów. Dodaj pierwszy wpis wagi.</div></div>`;
+    list.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak wpisów. Dodaj pierwszy wpis wagi.</span></div></div>`;
   } else {
     for(const e of filtered){
       const div = document.createElement("div");
@@ -913,26 +966,33 @@ $("#btnAddWeight").addEventListener("click", ()=>{
   const wRaw = $("#weighValue").value;
   const w = Number(String(wRaw).replace(",", "."));
   if(!date || !Number.isFinite(w)) return toast("Uzupełnij datę i wagę ❌");
+
   state.weightEntries.push({ id: uid(), date, weight: Number(w.toFixed(1)) });
   state.weightEntries.sort(byDateAsc);
   saveState();
   $("#weighValue").value = "";
   renderWeight();
 });
+
 $("#btnClearWeightForm").addEventListener("click", ()=>{ $("#weighDate").value=""; $("#weighValue").value=""; });
+
 $("#btnSaveGoal").addEventListener("click", ()=>{
+  // zapis celu (naprawione)
   state.goal.weight = $("#goalWeight").value;
   state.goal.date = $("#goalDate").value;
   saveState();
   renderWeight();
 });
+
 $("#btnApplyFilter").addEventListener("click", renderWeight);
 $("#btnResetFilter").addEventListener("click", ()=>{
   $("#filterFrom").value=""; $("#filterTo").value="";
   renderWeight();
 });
 
-/* ========= Trening ========= */
+/* =========================
+   TRENING: opis serii + ciężar tekst
+========================= */
 let draftExercise = null;
 
 function setTrainingMode(key){
@@ -947,16 +1007,6 @@ $("#trainingSeg").addEventListener("click", (e)=>{
   if(!btn) return;
   setTrainingMode(btn.dataset.t);
 });
-
-/* ✅ parser: jeśli ktoś wpisze w opisie czystą liczbę (np. "3"), to potraktuj jak count */
-function parseCountFromDesc(desc){
-  const t = String(desc || "").trim();
-  if(!t) return null;
-  if(/^\d+$/.test(t)) return Number(t);
-  const m = t.match(/(\d+)\s*$/); // np. "robocze 3" -> 3
-  if(m) return Number(m[1]);
-  return null;
-}
 
 function buildSetsUI(sets){
   const cont = $("#setsList");
@@ -984,7 +1034,6 @@ function buildSetsUI(sets){
         </label>
       </div>
     `;
-
     const reps = div.querySelector("[data-reps]");
     const weight = div.querySelector("[data-weight]");
     reps.addEventListener("input", ()=>{ s.reps = reps.value; });
@@ -1000,7 +1049,7 @@ function buildSetsUI(sets){
   });
 
   if(sets.length === 0){
-    cont.innerHTML = `<div class="item"><div class="muted">Brak serii. Dodaj serię przyciskiem „Dodaj serię”.</div></div>`;
+    cont.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak serii. Dodaj serię przyciskiem „Dodaj serię”.</span></div></div>`;
   }
 }
 
@@ -1012,7 +1061,7 @@ function renderTraining(){
   list.innerHTML = "";
 
   if(t.exercises.length === 0){
-    list.innerHTML = `<div class="item"><div class="muted">Brak ćwiczeń. Dodaj pierwsze ćwiczenie.</div></div>`;
+    list.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak ćwiczeń. Dodaj pierwsze ćwiczenie.</span></div></div>`;
     return;
   }
 
@@ -1020,14 +1069,15 @@ function renderTraining(){
     const div = document.createElement("div");
     div.className = "item";
 
-    const desc = ex.setsDesc ? `• ${ex.setsDesc}` : "";
-    const setsSummary = ex.sets.map((s,i)=>`S${i+1}: ${s.reps} powt. • ${s.weight || "—"}`).join(" | ");
+    const desc = (ex.setsDesc || "").trim();
+    const descText = desc ? `• ${desc}` : "";
+    const setsSummary = (ex.sets || []).map((s,i)=>`S${i+1}: ${s.reps} powt. • ${s.weight || "—"}`).join(" | ");
 
     div.innerHTML = `
       <div class="item-head">
         <div class="item-title">
           <b>${ex.name}</b>
-          <span>${desc} ${desc ? "—" : ""} ${setsSummary}</span>
+          <span>${descText} ${descText ? "— " : ""}${setsSummary}</span>
         </div>
         <div class="right">
           <button class="btn small" data-act="edit">Edytuj</button>
@@ -1045,9 +1095,9 @@ function renderTraining(){
     div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
       $("#exName").value = ex.name;
       $("#exSetsDesc").value = ex.setsDesc || "";
-      $("#exSetsCount").value = ex.sets.length;
+      $("#exSetsCount").value = (ex.sets || []).length;
 
-      draftExercise = { ...ex, sets: ex.sets.map(s=>({...s})) };
+      draftExercise = { ...ex, sets: (ex.sets || []).map(s=>({...s})) };
       buildSetsUI(draftExercise.sets);
       $("#setsEditor").style.display = "block";
     });
@@ -1059,24 +1109,18 @@ function renderTraining(){
 $("#btnBuildSets").addEventListener("click", ()=>{
   const name = $("#exName").value.trim();
   const setsDesc = $("#exSetsDesc").value.trim();
-  const countFromDesc = parseCountFromDesc(setsDesc);
-
-  let setsCount = $("#exSetsCount").value.trim() ? Number($("#exSetsCount").value) : null;
+  const setsCountRaw = $("#exSetsCount").value.trim();
 
   if(!name) return toast("Uzupełnij nazwę ćwiczenia ❌");
 
-  // jeśli user nie podał count, a opis to sama liczba -> użyj jej
-  if(setsCount === null && countFromDesc !== null) setsCount = countFromDesc;
-
-  if(setsCount !== null && (!Number.isFinite(setsCount) || setsCount < 0)){
-    return toast("Pole „Ile serii utworzyć” jest błędne ❌");
-  }
+  const setsCount = setsCountRaw ? Number(setsCountRaw) : 0;
+  if(!Number.isFinite(setsCount) || setsCount < 0) return toast("Pole „Ile serii utworzyć” jest błędne ❌");
 
   draftExercise = {
     id: uid(),
     name,
     setsDesc,
-    sets: Array.from({length: (setsCount || 0)}).map(()=>({ reps:"", weight:"" }))
+    sets: Array.from({length: setsCount}).map(()=>({ reps:"", weight:"" }))
   };
 
   buildSetsUI(draftExercise.sets);
@@ -1105,7 +1149,7 @@ $("#btnSaveExercise").addEventListener("click", ()=>{
     const reps = Number(String(s.reps).replace(",", "."));
     if(!Number.isFinite(reps)) return toast("Uzupełnij powtórzenia w każdej serii ❌");
     s.reps = String(Math.trunc(reps));
-    s.weight = String(s.weight ?? "").trim(); // tekst
+    s.weight = String(s.weight ?? "").trim();
   }
 
   const t = state.trainings[activeTrainingKey];
@@ -1128,12 +1172,286 @@ $("#btnClearExercise").addEventListener("click", ()=>{
   draftExercise = null;
 });
 
-/* ========= Dieta/Suplem/Witaminy: minimalnie – zostają bez zmian w tej wersji ========= */
-function renderDiet(){ $("#dietSections").innerHTML = `<div class="item"><div class="muted">Ta część jest bez zmian w tej poprawce (działa jak wcześniej).</div></div>`; }
-function renderSupp(){ $("#suppList").innerHTML = `<div class="item"><div class="muted">Ta część jest bez zmian w tej poprawce (działa jak wcześniej).</div></div>`; }
-function renderVits(){ $("#vitList").innerHTML = `<div class="item"><div class="muted">Ta część jest bez zmian w tej poprawce (działa jak wcześniej).</div></div>`; }
+/* =========================
+   DIETA
+========================= */
+function renderDiet(){
+  const root = $("#dietSections");
+  root.innerHTML = "";
 
-/* ========= Backup ========= */
+  if(state.diet.sections.length === 0){
+    root.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak sekcji. Dodaj np. „Posiłki – dzień treningowy”.</span></div></div>`;
+    return;
+  }
+
+  state.diet.sections.forEach(sec=>{
+    const secEl = document.createElement("div");
+    secEl.className = "item";
+    secEl.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${sec.title}</b>
+          <span>${sec.meals?.length || 0} posiłków</span>
+        </div>
+        <div class="right">
+          <button class="btn small" data-act="addMeal">➕ Posiłek</button>
+          <button class="btn small" data-act="editSec">Edytuj</button>
+          <button class="btn small danger" data-act="delSec">Usuń</button>
+        </div>
+      </div>
+      <div class="list" data-meals></div>
+    `;
+
+    secEl.querySelector('[data-act="delSec"]').addEventListener("click", ()=>{
+      if(!confirm("Usunąć całą sekcję?")) return;
+      state.diet.sections = state.diet.sections.filter(x=>x.id !== sec.id);
+      saveState(); renderDiet();
+    });
+
+    secEl.querySelector('[data-act="editSec"]').addEventListener("click", ()=>{
+      const t = prompt("Tytuł sekcji:", sec.title);
+      if(t === null) return;
+      sec.title = t.trim() || sec.title;
+      saveState(); renderDiet();
+    });
+
+    secEl.querySelector('[data-act="addMeal"]').addEventListener("click", ()=>{
+      const title = prompt("Nazwa posiłku (np. Śniadanie):", "Posiłek");
+      if(title === null) return;
+      sec.meals = sec.meals || [];
+      sec.meals.push({ id: uid(), title: title.trim() || "Posiłek", items: [] });
+      saveState(); renderDiet();
+    });
+
+    const mealsEl = secEl.querySelector("[data-meals]");
+    (sec.meals || []).forEach(meal=>{
+      const mealEl = document.createElement("div");
+      mealEl.className = "item";
+      mealEl.innerHTML = `
+        <div class="item-head">
+          <div class="item-title">
+            <b>${meal.title}</b>
+            <span>${meal.items?.length || 0} składników</span>
+          </div>
+          <div class="right">
+            <button class="btn small" data-act="addItem">➕ Składnik</button>
+            <button class="btn small" data-act="editMeal">Edytuj</button>
+            <button class="btn small danger" data-act="delMeal">Usuń</button>
+          </div>
+        </div>
+        <div class="list" data-items></div>
+      `;
+
+      mealEl.querySelector('[data-act="delMeal"]').addEventListener("click", ()=>{
+        if(!confirm("Usunąć posiłek?")) return;
+        sec.meals = sec.meals.filter(x=>x.id !== meal.id);
+        saveState(); renderDiet();
+      });
+      mealEl.querySelector('[data-act="editMeal"]').addEventListener("click", ()=>{
+        const t = prompt("Nazwa posiłku:", meal.title);
+        if(t === null) return;
+        meal.title = t.trim() || meal.title;
+        saveState(); renderDiet();
+      });
+      mealEl.querySelector('[data-act="addItem"]').addEventListener("click", ()=>{
+        const name = prompt("Nazwa składnika:", "");
+        if(name === null) return;
+        const qty = prompt("Ilość (np. 200):", "");
+        if(qty === null) return;
+        const unit = prompt("Jednostka (g / ml):", "g");
+        if(unit === null) return;
+        meal.items = meal.items || [];
+        meal.items.push({ id: uid(), name: name.trim() || "Składnik", qty: qty.trim(), unit: unit.trim() || "g" });
+        saveState(); renderDiet();
+      });
+
+      const itemsEl = mealEl.querySelector("[data-items]");
+      (meal.items || []).forEach(it=>{
+        const itEl = document.createElement("div");
+        itEl.className = "item";
+        itEl.innerHTML = `
+          <div class="item-head">
+            <div class="item-title">
+              <b>${it.name}</b>
+              <span>${it.qty || "—"} ${it.unit || ""}</span>
+            </div>
+            <div class="right">
+              <button class="btn small" data-act="edit">Edytuj</button>
+              <button class="btn small danger" data-act="del">Usuń</button>
+            </div>
+          </div>
+        `;
+        itEl.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+          meal.items = meal.items.filter(x=>x.id !== it.id);
+          saveState(); renderDiet();
+        });
+        itEl.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          const n = prompt("Nazwa:", it.name); if(n === null) return;
+          const q = prompt("Ilość:", it.qty); if(q === null) return;
+          const u = prompt("Jednostka:", it.unit); if(u === null) return;
+          it.name = n.trim() || it.name; it.qty = q.trim(); it.unit = u.trim();
+          saveState(); renderDiet();
+        });
+        itemsEl.appendChild(itEl);
+      });
+
+      mealsEl.appendChild(mealEl);
+    });
+
+    root.appendChild(secEl);
+  });
+}
+
+$("#btnAddDietSection").addEventListener("click", ()=>{
+  const title = $("#dietSectionTitle").value.trim();
+  if(!title) return toast("Wpisz tytuł sekcji ❌");
+  state.diet.sections.push({ id: uid(), title, meals: [] });
+  $("#dietSectionTitle").value = "";
+  saveState(); renderDiet();
+});
+
+/* =========================
+   SUPLEMENTACJA
+========================= */
+function renderSupp(){
+  const root = $("#suppList");
+  root.innerHTML = "";
+
+  const times = [
+    "Przed śniadaniem","Do śniadania","Przed treningiem",
+    "W czasie treningu","Po treningu","Przed snem"
+  ];
+  const grouped = new Map(times.map(t=>[t, []]));
+  for(const it of state.supplements.items){
+    if(!grouped.has(it.time)) grouped.set(it.time, []);
+    grouped.get(it.time).push(it);
+  }
+
+  times.forEach(t=>{
+    const items = grouped.get(t) || [];
+    const box = document.createElement("div");
+    box.className = "item";
+    box.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${t}</b>
+          <span>${items.length} pozycji</span>
+        </div>
+      </div>
+      <div class="list" data-box></div>
+    `;
+    const list = box.querySelector("[data-box]");
+
+    if(items.length === 0){
+      list.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak.</span></div></div>`;
+    } else {
+      items.forEach(it=>{
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div class="item-head">
+            <div class="item-title">
+              <b>${it.name}</b>
+              <span>${it.qty}</span>
+            </div>
+            <div class="right">
+              <button class="btn small" data-act="edit">Edytuj</button>
+              <button class="btn small danger" data-act="del">Usuń</button>
+            </div>
+          </div>
+        `;
+        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+          state.supplements.items = state.supplements.items.filter(x=>x.id !== it.id);
+          saveState(); renderSupp();
+        });
+        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          const n = prompt("Nazwa suplementu:", it.name); if(n === null) return;
+          const q = prompt("Ilość:", it.qty); if(q === null) return;
+          it.name = n.trim() || it.name;
+          it.qty = q.trim() || it.qty;
+          saveState(); renderSupp();
+        });
+        list.appendChild(row);
+      });
+    }
+
+    root.appendChild(box);
+  });
+}
+$("#btnAddSupp").addEventListener("click", ()=>{
+  const name = $("#suppName").value.trim();
+  const qty = $("#suppQty").value.trim();
+  const time = $("#suppTime").value;
+  if(!name || !qty) return toast("Uzupełnij nazwę i ilość ❌");
+  state.supplements.items.push({ id: uid(), time, name, qty });
+  $("#suppName").value = ""; $("#suppQty").value = "";
+  saveState(); renderSupp();
+});
+$("#btnClearSuppAll").addEventListener("click", ()=>{
+  if(!confirm("Wyczyścić całą suplementację?")) return;
+  state.supplements.items = [];
+  saveState(); renderSupp();
+});
+
+/* =========================
+   WITAMINY
+========================= */
+function renderVits(){
+  const root = $("#vitList");
+  root.innerHTML = "";
+  if(state.vitamins.items.length === 0){
+    root.innerHTML = `<div class="item"><div class="item-title"><span class="muted">Brak wpisów.</span></div></div>`;
+    return;
+  }
+  state.vitamins.items.forEach(it=>{
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <div class="item-head">
+        <div class="item-title">
+          <b>${it.name}</b>
+          <span>${it.qty} ${it.unit}</span>
+        </div>
+        <div class="right">
+          <button class="btn small" data-act="edit">Edytuj</button>
+          <button class="btn small danger" data-act="del">Usuń</button>
+        </div>
+      </div>
+    `;
+    div.querySelector('[data-act="del"]').addEventListener("click", ()=>{
+      state.vitamins.items = state.vitamins.items.filter(x=>x.id !== it.id);
+      saveState(); renderVits();
+    });
+    div.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+      const n = prompt("Nazwa:", it.name); if(n === null) return;
+      const q = prompt("Ilość:", it.qty); if(q === null) return;
+      const u = prompt("Miara:", it.unit); if(u === null) return;
+      it.name = n.trim() || it.name;
+      it.qty = q.trim() || it.qty;
+      it.unit = u.trim() || it.unit;
+      saveState(); renderVits();
+    });
+    root.appendChild(div);
+  });
+}
+$("#btnAddVit").addEventListener("click", ()=>{
+  const name = $("#vitName").value.trim();
+  const qty = $("#vitQty").value.trim();
+  const unit = $("#vitUnit").value.trim();
+  if(!name || !qty || !unit) return toast("Uzupełnij nazwę, ilość i miarę ❌");
+  state.vitamins.items.push({ id: uid(), name, qty, unit });
+  $("#vitName").value=""; $("#vitQty").value=""; $("#vitUnit").value="";
+  saveState(); renderVits();
+});
+$("#btnClearVitAll").addEventListener("click", ()=>{
+  if(!confirm("Wyczyścić wszystkie witaminy?")) return;
+  state.vitamins.items = [];
+  saveState(); renderVits();
+});
+
+/* =========================
+   BACKUP: eksport / import
+========================= */
 $("#btnBackup").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
@@ -1154,7 +1472,7 @@ $("#btnRestore").addEventListener("click", ()=>{
     try{
       const parsed = JSON.parse(text);
       state = deepMerge(structuredClone(DEFAULT_STATE), parsed);
-      saveState();
+      saveState(true);
       renderAll();
       refreshHeaderName();
       toast("Import OK ✅");
@@ -1165,7 +1483,9 @@ $("#btnRestore").addEventListener("click", ()=>{
   input.click();
 });
 
-/* ========= Start ========= */
+/* =========================
+   START
+========================= */
 function renderAll(){
   renderWeight();
   renderTraining();
@@ -1173,40 +1493,22 @@ function renderAll(){
   renderSupp();
   renderVits();
 }
+
 (function init(){
   refreshHeaderName();
-  if(!(state.profile?.name || "").trim()) openProfileModal(true);
+
+  if(!(state.profile?.name || "").trim()){
+    openProfileModal(true);
+  }
 
   const today = new Date().toISOString().slice(0,10);
   $("#weighDate").value = today;
 
   setTrainingMode("t1");
+
   renderAll();
   setActiveTab("weight");
 })();
-
-/* brakujące: modal i weight obsługa – prosto, żeby nie rozdmuchać */
-function openProfileModal(force=false){
-  $("#profileName").value = (state.profile?.name || "").trim();
-  $("#profileModal").classList.add("show");
-  $("#btnCloseProfile").style.display = force ? "none" : "inline-flex";
-}
-function closeProfileModal(){
-  $("#profileModal").classList.remove("show");
-}
-$("#btnProfile").addEventListener("click", ()=> openProfileModal(false));
-$("#btnCloseProfile").addEventListener("click", closeProfileModal);
-$("#btnSaveProfile").addEventListener("click", ()=>{
-  const n = $("#profileName").value.trim();
-  if(!n) return toast("Wpisz imię i nazwisko ❌");
-  state.profile.name = n;
-  saveState();
-  refreshHeaderName();
-  closeProfileModal();
-});
-
-/* waga minimalnie - żeby działało */
-function renderWeight(){ /* już zrobione wyżej */ }
 </script>
 </body>
 </html>
