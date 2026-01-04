@@ -39,7 +39,6 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* JAŚNIEJSZE TŁO */
     .bg{
       position:fixed; inset:0;
       background:
@@ -423,7 +422,7 @@
       <div class="card">
         <div class="section-title">
           <h2 id="trainingTitle">Trening</h2>
-          <span class="hint">Serie: opis dowolny • Ciężar: tekst</span>
+          <span class="hint">Serie: opis dowolny • Ciężar: tekst • Powtórzenia: tekst</span>
         </div>
 
         <div class="seg" id="trainingSeg">
@@ -460,7 +459,7 @@
           <div class="divider"></div>
           <div class="section-title">
             <h2>Serie</h2>
-            <span class="hint">Każda seria: powtórzenia + ciężar/uwagi</span>
+            <span class="hint">Każda seria: powtórzenia (tekst) + ciężar/uwagi (tekst)</span>
           </div>
 
           <div class="list" id="setsList"></div>
@@ -617,27 +616,19 @@
   </div>
 
 <script>
-/* =========================
-   PWA: Service Worker + status
-========================= */
 (async function registerSW(){
   const pill = document.getElementById("offlinePill");
   const setStatus = () => pill.textContent = navigator.onLine ? "📶 Status: online" : "📴 Status: offline";
   window.addEventListener("online", setStatus);
   window.addEventListener("offline", setStatus);
   setStatus();
-
   if("serviceWorker" in navigator){
     try{ await navigator.serviceWorker.register("./sw.js", { scope: "./" }); }catch(e){}
   }
 })();
 
-/* =========================
-   STATE (localStorage) + MIGRACJA
-========================= */
-const LS_KEY = "fitness_tracker"; // ✅ stały klucz od teraz
-
-// poprzednie klucze (żeby odzyskać dane)
+/* ====== localStorage + migracja ====== */
+const LS_KEY = "fitness_tracker";
 const OLD_KEYS = [
   "fitness_tracker_variant1_v1",
   "fitness_tracker_variant1_v2",
@@ -668,7 +659,6 @@ function deepMerge(base, extra){
   for(const k of Object.keys(extra || {})) out[k] = (k in base) ? deepMerge(base[k], extra[k]) : extra[k];
   return out;
 }
-
 function loadAnyKey(key){
   try{
     const raw = localStorage.getItem(key);
@@ -676,12 +666,8 @@ function loadAnyKey(key){
     return JSON.parse(raw);
   }catch(e){ return null; }
 }
-
 function migrateIfNeeded(){
-  // jeśli już jest nowy klucz – nic nie rób
   if(localStorage.getItem(LS_KEY)) return;
-
-  // szukaj po starych kluczach (od najnowszego)
   for(const k of OLD_KEYS.slice().reverse()){
     const data = loadAnyKey(k);
     if(data){
@@ -690,17 +676,13 @@ function migrateIfNeeded(){
     }
   }
 }
-
 migrateIfNeeded();
 
 function loadState(){
   const raw = loadAnyKey(LS_KEY);
   if(!raw) return structuredClone(DEFAULT_STATE);
-
-  // merge z defaultem, żeby nowe pola się dopisały
   return deepMerge(structuredClone(DEFAULT_STATE), raw);
 }
-
 let state = loadState();
 
 function saveState(silent=false){
@@ -708,9 +690,7 @@ function saveState(silent=false){
   if(!silent) toast("Zapisano ✅");
 }
 
-/* =========================
-   UI helpers
-========================= */
+/* ====== helpers ====== */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
@@ -728,9 +708,7 @@ function fmtKg(v){
   return n.toFixed(1) + " kg";
 }
 
-/* =========================
-   PROFIL
-========================= */
+/* ====== profil ====== */
 function refreshHeaderName(){
   const n = (state.profile?.name || "").trim();
   $("#hdrName").textContent = n ? n : "Twoje imię i nazwisko";
@@ -758,9 +736,7 @@ $("#btnSaveProfile").addEventListener("click", ()=>{
   closeProfileModal();
 });
 
-/* =========================
-   TABS
-========================= */
+/* ====== tabs ====== */
 let activeTab = "weight";
 let activeTrainingKey = "t1";
 
@@ -777,9 +753,7 @@ function setActiveTab(tab){
 }
 $$(".tab").forEach(btn=>btn.addEventListener("click", ()=>setActiveTab(btn.dataset.tab)));
 
-/* =========================
-   WAGA (cel + obliczenia + wykres)
-========================= */
+/* ====== waga ====== */
 function getFilteredEntries(){
   const from = $("#filterFrom").value || "";
   const to = $("#filterTo").value || "";
@@ -789,7 +763,7 @@ function getFilteredEntries(){
   return entries;
 }
 function monthlySeries(entries){
-  const map = new Map(); // ym -> weights[]
+  const map = new Map();
   for(const e of entries){
     const ym = (e.date || "").slice(0,7);
     if(!ym) continue;
@@ -834,7 +808,6 @@ function drawLineChart(canvas, labels, values){
   for(let i=0;i<=4;i++){
     const y = padT + (h*(i/4));
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL+w, y); ctx.stroke();
-
     const v = (maxV - span*(i/4));
     ctx.fillStyle = text;
     ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -870,7 +843,6 @@ function drawLineChart(canvas, labels, values){
     if(!p) return;
     ctx.fillStyle = dot;
     ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
-
     if(i % step === 0){
       ctx.fillStyle = text;
       ctx.font = "12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
@@ -889,16 +861,13 @@ function drawLineChart(canvas, labels, values){
     ctx.fillText("Brak danych do wykresu", padL + w/2, padT + h/2);
   }
 }
-
 function renderWeight(){
-  // wypełnij pola celem
   $("#goalWeight").value = state.goal.weight ?? "";
   $("#goalDate").value = state.goal.date ?? "";
 
   const latest = [...state.weightEntries].sort(byDateDesc)[0];
   $("#kpiLast").textContent = latest ? fmtKg(latest.weight) : "—";
 
-  // KPI różnicy do celu
   const goalW = Number(String(state.goal.weight || "").replace(",", "."));
   const lastW = latest ? Number(latest.weight) : NaN;
 
@@ -909,10 +878,8 @@ function renderWeight(){
   } else {
     $("#kpiDiff").textContent = "—";
   }
-
   $("#kpiEta").textContent = state.goal.date ? state.goal.date : "—";
 
-  // lista wpisów
   const list = $("#weightList");
   list.innerHTML = "";
   const filtered = getFilteredEntries().sort(byDateDesc);
@@ -960,39 +927,31 @@ function renderWeight(){
   const series = monthlySeries(getFilteredEntries());
   drawLineChart($("#weightChart"), series.labels, series.values);
 }
-
 $("#btnAddWeight").addEventListener("click", ()=>{
   const date = $("#weighDate").value;
   const wRaw = $("#weighValue").value;
   const w = Number(String(wRaw).replace(",", "."));
   if(!date || !Number.isFinite(w)) return toast("Uzupełnij datę i wagę ❌");
-
   state.weightEntries.push({ id: uid(), date, weight: Number(w.toFixed(1)) });
   state.weightEntries.sort(byDateAsc);
   saveState();
   $("#weighValue").value = "";
   renderWeight();
 });
-
 $("#btnClearWeightForm").addEventListener("click", ()=>{ $("#weighDate").value=""; $("#weighValue").value=""; });
-
 $("#btnSaveGoal").addEventListener("click", ()=>{
-  // zapis celu (naprawione)
   state.goal.weight = $("#goalWeight").value;
   state.goal.date = $("#goalDate").value;
   saveState();
   renderWeight();
 });
-
 $("#btnApplyFilter").addEventListener("click", renderWeight);
 $("#btnResetFilter").addEventListener("click", ()=>{
   $("#filterFrom").value=""; $("#filterTo").value="";
   renderWeight();
 });
 
-/* =========================
-   TRENING: opis serii + ciężar tekst
-========================= */
+/* ====== trening (tu jest poprawka: powtórzenia = TEXT) ====== */
 let draftExercise = null;
 
 function setTrainingMode(key){
@@ -1019,21 +978,23 @@ function buildSetsUI(sets){
       <div class="item-head">
         <div class="item-title">
           <b>Seria ${idx+1}</b>
-          <span class="muted">Powtórzenia + ciężar/uwagi</span>
+          <span class="muted">Powtórzenia (tekst) + ciężar/uwagi (tekst)</span>
         </div>
         <div class="right">
           <button class="btn small danger" data-delset>Usuń serię</button>
         </div>
       </div>
       <div class="row">
-        <label>Powtórzenia
-          <input type="number" min="0" step="1" inputmode="numeric" data-reps value="${s.reps ?? ""}">
+        <!-- ✅ ZMIANA: type=text -->
+        <label>Powtórzenia (tekst)
+          <input type="text" data-reps value="${(s.reps ?? "")}" placeholder='np. "15", "12+2", "AMRAP", "8-10"' />
         </label>
         <label>Ciężar / uwagi (tekst)
-          <input type="text" data-weight value="${s.weight ?? ""}" placeholder='np. "60kg", "60kg + łańcuch", "guma czerwona"' />
+          <input type="text" data-weight value="${(s.weight ?? "")}" placeholder='np. "60kg", "60kg + łańcuch", "guma czerwona"' />
         </label>
       </div>
     `;
+
     const reps = div.querySelector("[data-reps]");
     const weight = div.querySelector("[data-weight]");
     reps.addEventListener("input", ()=>{ s.reps = reps.value; });
@@ -1071,7 +1032,9 @@ function renderTraining(){
 
     const desc = (ex.setsDesc || "").trim();
     const descText = desc ? `• ${desc}` : "";
-    const setsSummary = (ex.sets || []).map((s,i)=>`S${i+1}: ${s.reps} powt. • ${s.weight || "—"}`).join(" | ");
+    const setsSummary = (ex.sets || [])
+      .map((s,i)=>`S${i+1}: ${String(s.reps ?? "").trim() || "—"} • ${String(s.weight ?? "").trim() || "—"}`)
+      .join(" | ");
 
     div.innerHTML = `
       <div class="item-head">
@@ -1145,11 +1108,12 @@ $("#btnSaveExercise").addEventListener("click", ()=>{
   if(!draftExercise.name) return toast("Brak nazwy ćwiczenia ❌");
   if(draftExercise.sets.length === 0) return toast("Dodaj przynajmniej 1 serię ❌");
 
+  // ✅ ZMIANA: reps już nie musi być liczbą – ale wymagamy żeby było cokolwiek wpisane
   for(const s of draftExercise.sets){
-    const reps = Number(String(s.reps).replace(",", "."));
-    if(!Number.isFinite(reps)) return toast("Uzupełnij powtórzenia w każdej serii ❌");
-    s.reps = String(Math.trunc(reps));
+    s.reps = String(s.reps ?? "").trim();
     s.weight = String(s.weight ?? "").trim();
+    if(!s.reps) return toast("Uzupełnij powtórzenia w każdej serii (tekst) ❌");
+    // ciężar może być pusty – czasem nie wpiszesz
   }
 
   const t = state.trainings[activeTrainingKey];
@@ -1172,9 +1136,7 @@ $("#btnClearExercise").addEventListener("click", ()=>{
   draftExercise = null;
 });
 
-/* =========================
-   DIETA
-========================= */
+/* ====== dieta / suplementy / witaminy ====== */
 function renderDiet(){
   const root = $("#dietSections");
   root.innerHTML = "";
@@ -1301,7 +1263,6 @@ function renderDiet(){
     root.appendChild(secEl);
   });
 }
-
 $("#btnAddDietSection").addEventListener("click", ()=>{
   const title = $("#dietSectionTitle").value.trim();
   if(!title) return toast("Wpisz tytuł sekcji ❌");
@@ -1310,9 +1271,6 @@ $("#btnAddDietSection").addEventListener("click", ()=>{
   saveState(); renderDiet();
 });
 
-/* =========================
-   SUPLEMENTACJA
-========================= */
 function renderSupp(){
   const root = $("#suppList");
   root.innerHTML = "";
@@ -1374,7 +1332,6 @@ function renderSupp(){
         list.appendChild(row);
       });
     }
-
     root.appendChild(box);
   });
 }
@@ -1393,9 +1350,6 @@ $("#btnClearSuppAll").addEventListener("click", ()=>{
   saveState(); renderSupp();
 });
 
-/* =========================
-   WITAMINY
-========================= */
 function renderVits(){
   const root = $("#vitList");
   root.innerHTML = "";
@@ -1449,9 +1403,7 @@ $("#btnClearVitAll").addEventListener("click", ()=>{
   saveState(); renderVits();
 });
 
-/* =========================
-   BACKUP: eksport / import
-========================= */
+/* ====== backup ====== */
 $("#btnBackup").addEventListener("click", ()=>{
   const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
@@ -1483,9 +1435,7 @@ $("#btnRestore").addEventListener("click", ()=>{
   input.click();
 });
 
-/* =========================
-   START
-========================= */
+/* ====== start ====== */
 function renderAll(){
   renderWeight();
   renderTraining();
@@ -1493,19 +1443,12 @@ function renderAll(){
   renderSupp();
   renderVits();
 }
-
 (function init(){
   refreshHeaderName();
-
-  if(!(state.profile?.name || "").trim()){
-    openProfileModal(true);
-  }
-
+  if(!(state.profile?.name || "").trim()) openProfileModal(true);
   const today = new Date().toISOString().slice(0,10);
   $("#weighDate").value = today;
-
   setTrainingMode("t1");
-
   renderAll();
   setActiveTab("weight");
 })();
